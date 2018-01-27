@@ -1,5 +1,6 @@
 # SplitExec implementation from https://pypi.python.org/pypi/withhacks
 # Copyright 2010 Ryan Kelly under the MIT License
+#
 # other code from https://github.com/pkgcore/snakeoil and https://github.com/pkgcore/pychroot
 # Copyright 2018 Ian Daniher <itdaniher@gmail.com> under the BSD-3 Clause License
 # Copyright 2015-2017 Tim Harder <radhermit@gmail.com> under the BSD-3 Clause License
@@ -14,11 +15,9 @@ import inspect
 import threading
 import traceback
 import subprocess
-import ctypes.util
 
 from multiprocessing.connection import Pipe
 from importlib import import_module
-from ctypes.util import find_library
 
 CLONE_FS = 512
 CLONE_FILES = 1024
@@ -319,7 +318,7 @@ def setns(fd, nstype):
         if isinstance(fd, str):
             fp = open(fd)
             fd = fp.fileno()
-        libc = ctypes.CDLL(ctypes.util.find_library('c'), use_errno=True)
+        libc = ctypes.CDLL(None, use_errno=True)
         if libc.setns(ctypes.c_int(fd), ctypes.c_int(nstype)) != 0:
             e = ctypes.get_errno()
             raise OSError(e, os.strerror(e))
@@ -337,7 +336,7 @@ def unshare(flags):
     Raises:
         OSError: if unshare failed.
     '''
-    libc = ctypes.CDLL(ctypes.util.find_library('c'), use_errno=True)
+    libc = ctypes.CDLL(None, use_errno=True)
     if libc.unshare(ctypes.c_int(flags)) != 0:
         e = ctypes.get_errno()
         raise OSError(e, os.strerror(e))
@@ -352,7 +351,7 @@ def setdomainname(name):
     Raises:
         OSError: if setdomainname fails
     '''
-    libc = ctypes.CDLL(ctypes.util.find_library('c'), use_errno=True)
+    libc = ctypes.CDLL(None, use_errno=True)
     name = name.encode() if isinstance(name, str) else name
     if libc.setdomainname(name, len(name)) != 0:
         e = ctypes.get_errno()
@@ -540,7 +539,7 @@ def simple_unshare(_mount=True, uts=True, ipc=True, net=False, pid=False, user=F
 
 def mount(source, target, fstype, flags, data=None):
     'Call mount(2); see the man page for details.'
-    libc = ctypes.CDLL(find_library('c'), use_errno=True)
+    libc = ctypes.CDLL(None, use_errno=True)
     source = source.encode() if isinstance(source, str) else source
     target = target.encode() if isinstance(target, str) else target
     fstype = fstype.encode() if isinstance(fstype, str) else fstype
@@ -551,7 +550,7 @@ def mount(source, target, fstype, flags, data=None):
 
 def umount(target, flags=None):
     'Call umount or umount2; see the umount(2) man page for details.'
-    libc = ctypes.CDLL(find_library('c'), use_errno=True)
+    libc = ctypes.CDLL(None, use_errno=True)
     target = target.encode() if isinstance(target, str) else target
     args = []
     func = libc.umount
