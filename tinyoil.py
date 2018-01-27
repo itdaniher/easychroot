@@ -342,22 +342,6 @@ def unshare(flags):
         raise OSError(e, os.strerror(e))
 
 
-def setdomainname(name):
-    '''Binding to the setdomainname system call.
-
-    Args:
-        name: domain name to set
-
-    Raises:
-        OSError: if setdomainname fails
-    '''
-    libc = ctypes.CDLL(None, use_errno=True)
-    name = name.encode() if isinstance(name, str) else name
-    if libc.setdomainname(name, len(name)) != 0:
-        e = ctypes.get_errno()
-        raise OSError(e, os.strerror(e))
-
-
 def _reap_children(pid):
     '''Reap all children that get reparented to us until we see |pid| exit.
 
@@ -472,10 +456,7 @@ def create_utsns(hostname=None):
         else:
             raise
     if hostname is not None:
-        hostname, _, domainname = hostname.partition('.')
         socket.sethostname(hostname)
-        if domainname:
-            setdomainname(domainname)
 
 
 def create_userns():
