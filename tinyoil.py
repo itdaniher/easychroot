@@ -16,7 +16,6 @@ import traceback
 import subprocess
 import ctypes.util
 
-from contextlib import contextmanager
 from multiprocessing.connection import Pipe
 from importlib import import_module
 from ctypes.util import find_library
@@ -278,44 +277,6 @@ class Namespace(SplitExec):
 
     def _child_setup(self):
         namespaces.simple_unshare(hostname=self._hostname, **self._namespaces)
-
-
-@contextmanager
-def chdir(path):
-    '''Context manager that changes the current working directory.
-
-    On exiting the context, the current working directory is switched back to
-    its original value.
-
-    Args:
-        path: The directory path to change the working directory to.
-    '''
-    orig_cwd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(orig_cwd)
-
-
-@contextmanager
-def syspath(path, condition=True, position=0):
-    '''Context manager that mangles sys.path and then reverts on exit.
-
-    Args:
-        path: The directory path to add to sys.path.
-        condition: Optional boolean that decides whether sys.path is mangled or
-            not, defaults to being enabled.
-        position: Optional integer that is the place where the path is inserted
-            in sys.path, defaults to prepending.
-    '''
-    syspath = sys.path[:]
-    if condition:
-        sys.path.insert(position, path)
-    try:
-        yield
-    finally:
-        sys.path = syspath
 
 
 def exit_as_status(status):
