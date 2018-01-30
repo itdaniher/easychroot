@@ -7,7 +7,10 @@ import errno
 import logging
 import operator
 from functools import reduce
+from typing import Dict, Optional
+
 from tinyoil import touch, mount, MS_BIND, MS_REC, MS_REMOUNT, MS_RDONLY, SplitExec, simple_unshare
+
 
 ChrootError = ChrootMountError = Exception
 
@@ -23,7 +26,7 @@ def dictbool(dct, key):
     return key in dct and isinstance(dct[key], bool) and dct[key]
 
 
-def getlogger(log, name):
+def getlogger(log: None, name: str) -> logging.Logger:
     '''Gets a logger given a logger and a package.
 
     Will return the given logger if the name is not generated from
@@ -128,8 +131,9 @@ class Chroot(SplitExec):
     '''
     default_mounts = {'/dev': {'recursive': True}, 'proc:/proc': {},
                       'sysfs:/sys': {}, 'tmpfs:/dev/shm': {}, '/etc/resolv.conf': {}}
-
-    def __init__(self, path, log=None, mountpoints=None, hostname=None, skip_chdir=False):
+    def __init__(self, path: str, log: None = None,
+                 mountpoints: Optional[Dict[str, Dict[str, bool]]] = None,
+                 hostname: Optional[str] = None, skip_chdir: bool = False) -> None:
         super(Chroot, self).__init__()
         self.log = getlogger(log, __name__)
         self.path = os.path.abspath(path)
