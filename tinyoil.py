@@ -18,6 +18,7 @@ import subprocess
 
 from multiprocessing.connection import Pipe
 from importlib import import_module
+from typing import Optional, Union
 
 CLONE_FS = 512
 CLONE_FILES = 1024
@@ -82,7 +83,7 @@ class SplitExec(object):
     pickled and passed back to the parent.
     '''
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.__trace_lock = threading.Lock()
         self.__orig_sys_trace = None
         self.__orig_trace_funcs = {}
@@ -102,7 +103,7 @@ class SplitExec(object):
         signal.signal(signum, signal.SIG_DFL)
         os.kill(os.getpid(), signum)
 
-    def _parent_setup(self):
+    def _parent_setup(self) -> None:
         'Initialization for parent process.'
         try:
             signal.signal(signal.SIGINT, self._parent_handler)
@@ -265,20 +266,7 @@ class SplitExec(object):
             return frame
 
 
-class Namespace(SplitExec):
-    'Context manager that provides Linux namespace support.'
-
-    def __init__(self, _mount=False, uts=True, ipc=False, net=False, pid=False, user=False, hostname=None):
-        self._hostname = hostname
-        self._namespaces = {'mount': _mount, 'uts': uts,
-                            'ipc': ipc, 'net': net, 'pid': pid, 'user': user}
-        super(Namespace, self).__init__()
-
-    def _child_setup(self):
-        namespaces.simple_unshare(hostname=self._hostname, **self._namespaces)
-
-
-def exit_as_status(status):
+def exit_as_status(status: int) -> None:
     """Exit the same way as |status|.
     If the status field says it was killed by a signal, then we'll do that to
     ourselves.  Otherwise we'll exit with the exit code.
@@ -303,7 +291,7 @@ def exit_as_status(status):
     sys.exit(exit_status)
 
 
-def setns(fd, nstype):
+def setns(fd: Optional[Union[int, str]], nstype: int) -> None:
     '''Binding to the Linux setns system call. See setns(2) for details.
 
     Args:
@@ -327,7 +315,7 @@ def setns(fd, nstype):
             fp.close()
 
 
-def unshare(flags):
+def unshare(flags: int) -> None:
     '''Binding to the Linux unshare system call. See unshare(2) for details.
 
     Args:
@@ -342,7 +330,7 @@ def unshare(flags):
         raise OSError(e, os.strerror(e))
 
 
-def _reap_children(pid):
+def _reap_children(pid: int) -> int:
     '''Reap all children that get reparented to us until we see |pid| exit.
 
     Args:
@@ -365,7 +353,7 @@ def _reap_children(pid):
     return pid_status
 
 
-def _safe_tcsetpgrp(fd, pgrp):
+def _safe_tcsetpgrp(fd: int, pgrp: int) -> None:
     'Set |pgrp| as the controller of the tty |fd|.'
     try:
         curr_pgrp = os.tcgetpgrp(fd)
@@ -377,7 +365,7 @@ def _safe_tcsetpgrp(fd, pgrp):
         os.tcsetpgrp(fd, pgrp)
 
 
-def create_pidns():
+def create_pidns() -> Optional[int]:
     '''Start a new pid namespace
 
     This will launch all the right manager processes.  The child that returns
@@ -419,7 +407,7 @@ def create_pidns():
     return first_pid
 
 
-def create_netns():
+def create_netns() -> None:
     '''Start a new net namespace
 
     We will bring up the loopback interface, but that is all.
@@ -443,7 +431,7 @@ def create_netns():
             raise
 
 
-def create_utsns(hostname=None):
+def create_utsns(hostname: Optional[str] = None) -> None:
     '''Start a new UTS namespace
 
     If functionality is not available, then it will return w/out doing anything.
@@ -459,7 +447,7 @@ def create_utsns(hostname=None):
         socket.sethostname(hostname)
 
 
-def create_userns():
+def create_userns() -> None:
     '''Start a new user namespace
 
     If functionality is not available, then it will return w/out doing anything.
@@ -481,7 +469,7 @@ def create_userns():
         f.write('0 %s 1\n' % gid)
 
 
-def simple_unshare(_mount=True, uts=True, ipc=True, net=False, pid=False, user=False, hostname=None):
+def simple_unshare(_mount: bool = True, uts: bool = True, ipc: bool = True, net: bool = False, pid: bool = False, user: bool = False, hostname: Optional[str] = None) -> None:
     """Simpler helper for setting up namespaces quickly.
 
     If support for any namespace type is not available, we'll silently skip it.
@@ -518,7 +506,7 @@ def simple_unshare(_mount=True, uts=True, ipc=True, net=False, pid=False, user=F
         create_pidns()
 
 
-def mount(source, target, fstype, flags, data=None):
+def mount(source: Optional[str], target: str, fstype: Optional[str], flags: int, data: None = None) -> None:
     'Call mount(2); see the man page for details.'
     libc = ctypes.CDLL(None, use_errno=True)
     source = source.encode() if isinstance(source, str) else source
