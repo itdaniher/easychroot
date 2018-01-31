@@ -12,6 +12,7 @@ import pickle
 import signal
 import ctypes
 import inspect
+import functools
 import threading
 import traceback
 import subprocess
@@ -69,7 +70,7 @@ def touch(fname, mode=420, **kwargs):
     '''
     flags = os.O_CREAT | os.O_APPEND
     dir_fd = kwargs.get('dir_fd', None)
-    os_open = partial(os.open, dir_fd=dir_fd)
+    os_open = functools.partial(os.open, dir_fd=dir_fd)
     with os.fdopen(os_open(fname, flags, mode)) as f:
         os.utime(f.fileno() if os.utime in os.supports_fd else fname,
                  dir_fd=None if os.supports_fd else dir_fd, **kwargs)
