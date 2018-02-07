@@ -7,13 +7,18 @@ user_shell = os.environ['SHELL']
 user_home = os.environ['HOME']
 chroot_path = sys.argv[1]
 
-env = dict(LD_LIBRARY_PATH="/lib:/usr/lib:/usr/local/lib", PYTHONDONTWRITEBYTECODE="1", LC_ALL="en_US.UTF-8",
-           TERM="xterm-256color", HOME=user_home, PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin", CHROOT="32b")
+env = dict(LD_LIBRARY_PATH="/lib:/usr/lib:/usr/local/lib", PYTHONDONTWRITEBYTECODE="1", LC_ALL="C.UTF-8",
+           LANG="C.UTF-8", TERM="xterm-256color", HOME=user_home, PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin")
 
-readonlys = '/etc/shadow /etc/shadow- /etc/sudoers /etc/passwd /etc/group /etc/group-'.split()
-mounts = {user_home: {'recursive': True}}
+
+readonlys = '/etc/shadow /etc/shadow- /etc/sudoers /etc/passwd /etc/group /etc/group- /etc/hosts'.split()
+mounts = {user_home: {'recursive': True}, '/tmp': {}}
 for ro in readonlys:
     mounts[ro] = {'readonly': True}
+
+if len(sys.argv) > 1:
+    for arg in sys.argv[2::]:
+        mounts[arg] = {}
 
 passwd_entry = [user_line for user_line in open('/etc/passwd', 'r').read().split('\n')
                 if user_name == user_line.split(':', maxsplit=1)[0]][0]
@@ -23,6 +28,7 @@ user_name, *_, login_home, login_shell = passwd_entry.split(':')
 init_user = os.getuid()
 
 with Chroot(chroot_path, mountpoints=mounts):
+    env["CHROOT"] = "_" + os.path.basename(chroot_path)
     os.environ = env
     os.chdir(user_home)
     user_shell = {True: user_shell,
