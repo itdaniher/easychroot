@@ -18,7 +18,8 @@ for ro in readonlys:
 
 if len(sys.argv) > 1:
     for arg in sys.argv[2::]:
-        mounts[arg] = {}
+        if arg[0] != '-':
+            mounts[arg] = {}
 
 passwd_entry = [user_line for user_line in open('/etc/passwd', 'r').read().split('\n')
                 if user_name == user_line.split(':', maxsplit=1)[0]][0]
@@ -33,8 +34,8 @@ with Chroot(chroot_path, mountpoints=mounts):
     os.chdir(user_home)
     user_shell = {True: user_shell,
                   False: '/bin/bash'}[os.path.exists(user_shell)]
-    if init_user != 1000 and os.path.exists(login_shell):
-        print("have privilege and valid login_shell, su'ing to original user")
+    if init_user != 1000 and os.path.exists(login_shell) and '--root' not in sys.argv:
+        print("have privilege and valid login_shell, no --root flag - su'ing to original user")
         os.execve('/bin/su', ('/bin/su', user_name), os.environ)
     else:
         print("dropping to root shell: execve'ing %s" % user_shell)
