@@ -4,10 +4,10 @@
 
 import os
 import errno
-import logging
 import operator
+from logging import Logger, getLogger
 from functools import reduce
-from typing import Dict, Optional
+from typing import Dict, Optional, Iterator, Any
 
 from tinyoil import touch, mount, MS_BIND, MS_REC, MS_REMOUNT, MS_RDONLY, SplitExec, simple_unshare
 
@@ -26,18 +26,16 @@ def dictbool(dct, key):
     return key in dct and isinstance(dct[key], bool) and dct[key]
 
 
-def getlogger(log: None, name: str) -> logging.Logger:
+def getlogger(log: Optional[Logger], name: str) -> Logger:
     '''Gets a logger given a logger and a package.
 
     Will return the given logger if the name is not generated from
     the current package, otherwise generate a logger based on __name__.
 
     :param log: Logger to start with.
-    :type log: logging.Logger
     :param name: The __name__ of the caller.
-    :type name: str
     '''
-    return log if isinstance(log, logging.Logger) and not log.name.startswith(name.partition('.')[0]) else logging.getLogger(name)
+    return log if isinstance(log, Logger) and not log.name.startswith(name.partition('.')[0]) else getLogger(name)
 
 
 def bind(src, dest, chroot, create=False, log=None, readonly=False, recursive=False, **_kwargs):
@@ -167,7 +165,7 @@ class Chroot(SplitExec):
                 self.mountpoints[k]['create'] = True
 
     @property
-    def mounts(self):
+    def mounts(self) -> Iterator[Any]:
         for k, options in list(self.mountpoints.items()):
             source, _, dest = k.partition(':')
             if not dest:
@@ -175,7 +173,7 @@ class Chroot(SplitExec):
             dest = os.path.join(self.path, dest.lstrip('/'))
             yield k, source, dest, options
 
-    def _child_setup(self):
+    def _child_setup(self) -> None:
         kwargs = {}
         if os.getuid() != 0:
             kwargs.update({'user': True, 'net': True})
@@ -185,7 +183,7 @@ class Chroot(SplitExec):
         if not self.skip_chdir:
             os.chdir('/')
 
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         for _, _, chrmount, opts in self.mounts:
             if 'create' not in opts:
                 continue
