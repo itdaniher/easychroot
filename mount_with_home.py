@@ -4,7 +4,10 @@ from pychroot import Chroot
 
 user_name = os.environ.get('SUDO_USER') or os.environ['USER']
 user_shell = os.environ['SHELL']
-user_home = os.environ['HOME']
+if '--root' in sys.argv:
+    user_home = '/root'
+else:
+    user_home = os.environ['HOME']
 chroot_path = sys.argv[1]
 
 env = dict(LD_LIBRARY_PATH="/lib:/usr/lib:/usr/local/lib", PYTHONDONTWRITEBYTECODE="1", LC_ALL="C.UTF-8",
@@ -14,7 +17,11 @@ if '--no_ro' not in sys.argv:
     readonlys = '/etc/shadow /etc/shadow- /etc/sudoers /etc/passwd /etc/group /etc/group- /etc/hosts'.split()
 else:
     readonlys = []
-mounts = {user_home: {'recursive': True}, '/tmp': {}}
+if '--no_home' not in sys.argv:
+    mounts = {user_home: {'recursive': True}, '/tmp': {}}
+else:
+    mounts = {'/tmp': {}}
+
 for ro in readonlys:
     mounts[ro] = {'readonly': True}
 
