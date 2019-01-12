@@ -1,0 +1,14 @@
+### Build Alpine chroot
+
+```bash
+sudo ./sbin/apk.static -X http://dl-5.alpinelinux.org/alpine/v3.9/main -U --allow-untrusted --root . --initdb add alpine-base alpine-sdk
+```
+
+### Build Ubuntu chroot (32b or 64b)
+
+```bash
+wget http://cdimage.ubuntu.com/ubuntu-base/releases/18.04/release/ubuntu-base-18.04.1-base-arm64.tar.gz http://cdimage.ubuntu.com/ubuntu-base/releases/18.04/release/ubuntu-base-18.04.1-base-armhf.tar.gz
+mkdir ubuntu-1804-arm64 && cd ubuntu-1804-arm64
+sudo tar -xvf ../../ubuntu-base-18.04.1-base-arm64.tar.gz
+```
+

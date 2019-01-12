@@ -14,7 +14,7 @@ env = dict(LD_LIBRARY_PATH="/lib:/usr/lib:/usr/local/lib", PYTHONDONTWRITEBYTECO
            LANG="C.UTF-8", TERM="xterm-256color", HOME=user_home, PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin")
 
 if '--no_ro' not in sys.argv:
-    readonlys = '/etc/shadow /etc/shadow- /etc/sudoers /etc/passwd /etc/group /etc/group- /etc/hosts'.split()
+    readonlys = '/etc/shadow /etc/shadow- /etc/sudoers /etc/passwd /etc/group /etc/group- /etc/hosts /etc/fstab'.split()
 else:
     readonlys = []
 if '--no_home' not in sys.argv:
@@ -42,7 +42,7 @@ with Chroot(chroot_path, mountpoints=mounts):
     os.environ = env
     os.chdir(user_home)
     user_shell = {True: user_shell,
-                  False: '/bin/bash'}[os.path.exists(user_shell)]
+                  False: '/bin/sh'}[os.path.exists(user_shell)]
     if init_user != 1000 and os.path.exists(login_shell) and '--root' not in sys.argv:
         print("have privilege and valid login_shell, no --root flag - su'ing to original user")
         os.execve('/bin/su', ('/bin/su', user_name), os.environ)
