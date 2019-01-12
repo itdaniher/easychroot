@@ -1,6 +1,9 @@
 ### Build Alpine chroot
 
 ```bash
+wget http://dl-5.alpinelinux.org/alpine/v3.9/main/aarch64/apk-tools-static-2.10.3-r1.apk
+mkdir alpine && cd alpine
+sudo tar -xzf ../apk-tools-static-2.10.3-r1.apk
 sudo ./sbin/apk.static -X http://dl-5.alpinelinux.org/alpine/v3.9/main -U --allow-untrusted --root . --initdb add alpine-base alpine-sdk
 ```
 
