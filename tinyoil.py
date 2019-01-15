@@ -292,30 +292,6 @@ def exit_as_status(status: int) -> None:
     sys.exit(exit_status)
 
 
-def setns(fd: Optional[Union[int, str]], nstype: int) -> None:
-    '''Binding to the Linux setns system call. See setns(2) for details.
-
-    Args:
-        fd: An open file descriptor or path to one.
-        nstype: Namespace to enter; one of CLONE_*.
-
-    Raises:
-        OSError: if setns failed.
-    '''
-    try:
-        fp = None
-        if isinstance(fd, str):
-            fp = open(fd)
-            fd = fp.fileno()
-        libc = ctypes.CDLL(None, use_errno=True)
-        if libc.setns(ctypes.c_int(fd), ctypes.c_int(nstype)) != 0:
-            e = ctypes.get_errno()
-            raise OSError(e, os.strerror(e))
-    finally:
-        if fp is not None:
-            fp.close()
-
-
 def unshare(flags: int) -> None:
     '''Binding to the Linux unshare system call. See unshare(2) for details.
 
@@ -466,15 +442,3 @@ def mount(source: Optional[str], target: str, fstype: Optional[str], flags: int,
         raise OSError(e, os.strerror(e))
 
 
-def umount(target, flags=None):
-    'Call umount or umount2; see the umount(2) man page for details.'
-    libc = ctypes.CDLL(None, use_errno=True)
-    target = target.encode() if isinstance(target, str) else target
-    args = []
-    func = libc.umount
-    if flags is not None:
-        args.append(ctypes.c_ulong(flags))
-        func = libc.umount2
-    if func(target, *args) != 0:
-        e = ctypes.get_errno()
-        raise OSError(e, os.strerror(e))
