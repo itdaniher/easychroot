@@ -174,10 +174,7 @@ class Chroot(SplitExec):
             yield k, source, dest, options
 
     def _child_setup(self) -> None:
-        kwargs = {}
-        if os.getuid() != 0:
-            kwargs.update({'user': True, 'net': True})
-        simple_unshare(pid=True, hostname=self.hostname, **kwargs)
+        simple_unshare(hostname=self.hostname)
         self._mount()
         os.chroot(self.path)
         if not self.skip_chdir:
