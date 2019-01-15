@@ -408,30 +408,6 @@ def create_pidns() -> Optional[int]:
     return first_pid
 
 
-def create_netns() -> None:
-    '''Start a new net namespace
-
-    We will bring up the loopback interface, but that is all.
-
-    If functionality is not available, then it will return w/out doing anything.
-    '''
-    try:
-        unshare(CLONE_NEWNET)
-    except OSError as e:
-        if e.errno == errno.EINVAL:
-            return
-        else:
-            raise
-    try:
-        subprocess.call(['ip', 'link', 'set', 'up', 'lo'])
-    except OSError as e:
-        if e.errno == errno.ENOENT:
-            sys.stderr.write(
-                'warning: could not bring up loopback for network; install the iproute2 package\n')
-        else:
-            raise
-
-
 def create_utsns(hostname: Optional[str] = None) -> None:
     '''Start a new UTS namespace
 
@@ -448,29 +424,7 @@ def create_utsns(hostname: Optional[str] = None) -> None:
         socket.sethostname(hostname)
 
 
-def create_userns() -> None:
-    '''Start a new user namespace
-
-    If functionality is not available, then it will return w/out doing anything.
-    '''
-    uid = os.getuid()
-    gid = os.getgid()
-    try:
-        unshare(CLONE_NEWUSER)
-    except OSError as e:
-        if e.errno == errno.EINVAL:
-            return
-        else:
-            raise
-    with open('/proc/self/setgroups', 'w') as f:
-        f.write('deny')
-    with open('/proc/self/uid_map', 'w') as f:
-        f.write('0 %s 1\n' % uid)
-    with open('/proc/self/gid_map', 'w') as f:
-        f.write('0 %s 1\n' % gid)
-
-
-def simple_unshare(_mount: bool = True, uts: bool = True, ipc: bool = True, net: bool = False, pid: bool = False, user: bool = False, hostname: Optional[str] = None) -> None:
+def simple_unshare(_mount: bool = True, uts: bool = True, ipc: bool = True, pid: bool = True, hostname: Optional[str] = None) -> None:
     """Simpler helper for setting up namespaces quickly.
 
     If support for any namespace type is not available, we'll silently skip it.
@@ -479,13 +433,9 @@ def simple_unshare(_mount: bool = True, uts: bool = True, ipc: bool = True, net:
         mount: Create a mount namespace.
         uts: Create a UTS namespace.
         ipc: Create an IPC namespace.
-        net: Create a net namespace.
         pid: Create a pid namespace.
-        user: Create a user namespace.
         hostname: hostname to use for the UTS namespace
     """
-    if user:
-        create_userns()
     if _mount:
         unshare(CLONE_NEWNS)
         try:
@@ -501,8 +451,6 @@ def simple_unshare(_mount: bool = True, uts: bool = True, ipc: bool = True, net:
         except OSError as e:
             if e.errno != errno.EINVAL:
                 pass
-    if net:
-        create_netns()
     if pid:
         create_pidns()
 
