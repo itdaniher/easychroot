@@ -38,7 +38,7 @@ def getlogger(log: Optional[Logger], name: str) -> Logger:
     return log if isinstance(log, Logger) and not log.name.startswith(name.partition('.')[0]) else getLogger(name)
 
 
-def bind(src, dest, chroot, create=False, log=None, readonly=False, recursive=False, **_kwargs):
+def bind(src, dest, chroot, create=False, log=None, readonly=False, recursive=False, optional=False, **_kwargs):
     '''Set up a bind mount.
 
     :param src: The source location to mount.
@@ -79,13 +79,18 @@ def bind(src, dest, chroot, create=False, log=None, readonly=False, recursive=Fa
                 raise
         if not os.path.isdir(src) and src not in fstypes:
             try:
+                os.makedirs(src)
+            except:
+                pass
+            try:
                 touch(dest)
             except OSError as e:
                 raise ChrootMountError("cannot bind mount to '{}'".format(
                     dest), getattr(e, 'errno', None))
     if not os.path.exists(src) and src not in fstypes:
-        raise ChrootMountError(
-            "cannot bind mount from '{}'".format(src), errno.ENOENT)
+        if not optional:
+            raise ChrootMountError(
+                "cannot bind mount from '{}'".format(src), errno.ENOENT)
     elif not os.path.exists(dest):
         raise ChrootMountError(
             "cannot bind mount to '{}'".format(dest), errno.ENOENT)
