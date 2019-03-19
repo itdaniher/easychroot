@@ -10,6 +10,13 @@ else:
     user_home = os.environ['HOME']
 chroot_path = sys.argv[1]
 
+passwd_entry = [user_line for user_line in open('/etc/passwd', 'r').read().split('\n')
+                if user_name == user_line.split(':', maxsplit=1)[0]][0]
+
+user_name, _, uid, gid, *_, login_home, login_shell = passwd_entry.split(':')
+
+init_user = os.getuid()
+
 env = dict(LD_LIBRARY_PATH="/lib:/usr/lib:/usr/local/lib", PYTHONDONTWRITEBYTECODE="1", LC_ALL="C.UTF-8",
            LANG="C.UTF-8", TERM="xterm-256color", HOME=user_home, PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin")
 
@@ -17,10 +24,24 @@ if '--no_ro' not in sys.argv:
     readonlys = '/etc/shadow /etc/shadow- /etc/sudoers /etc/passwd /etc/group /etc/group- /etc/hosts /etc/fstab'.split()
 else:
     readonlys = []
+
 if '--no_home' not in sys.argv:
     mounts = {user_home: {'recursive': True}, '/tmp': {}}
 else:
-    mounts = {'/tmp': {}}
+    temp_home = f'/tmp{user_home}'
+    mounts = {f'{temp_home}:{user_home}': {}, '/tmp': {}}
+    if login_shell == '/bin/zsh':
+        mounts[f'{user_home}/.zshrc:{user_home}/.zshrc'] = {'readonly':True, 'optional': True}
+        mounts[f'{user_home}/.zfunctions'] = {'readonly':True, 'optional': True}
+    try:
+        os.makedirs(temp_home)
+    except:
+        pass
+    uid_, gid_ = int(uid), int(gid)
+    os.chown(temp_home, uid_, gid_)
+    for root, dirs, files in os.walk(temp_home):
+        for name in dirs + files:
+            os.chown(os.path.join(root, name), uid_, gid_)
 
 for ro in readonlys:
     mounts[ro] = {'readonly': True}
@@ -29,13 +50,6 @@ if len(sys.argv) > 1:
     for arg in sys.argv[2::]:
         if arg[0] != '-':
             mounts[arg] = {}
-
-passwd_entry = [user_line for user_line in open('/etc/passwd', 'r').read().split('\n')
-                if user_name == user_line.split(':', maxsplit=1)[0]][0]
-
-user_name, *_, login_home, login_shell = passwd_entry.split(':')
-
-init_user = os.getuid()
 
 with Chroot(chroot_path, mountpoints=mounts):
     env["CHROOT"] = "_" + os.path.basename(chroot_path.strip('/'))
