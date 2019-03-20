@@ -3,15 +3,15 @@
 __doc__ = f"""{__file__}:
 
 Usage:
-  {__file__} CHROOT_PATH [options] [--share_home | --use_home=HOME_DIRECTORY_PATH] [ADDITIONAL_VOLUMES...]
-  {__file__} (-h | --help)
+  {__file__} CHROOT_PATH [--root | --no_ro | --share_home | --use_home=HOME_DIRECTORY_PATH] [ADDITIONAL_VOLUMES...]
+  {__file__} --help
   {__file__} --version
 
 Options:
-  -h --help     Show this screen.
+  --help        Show this screen.
   --version     Show version.
-  --no_ro       Don't bind-mount readonly files necessary for consistent environment usage, like /etc/password or /etc/hosts.
   --root        Don't drop privs to executing user, maintain root permissions in chroot.
+  --no_ro       Don't bind-mount readonly files necessary for consistent environment usage, like /etc/password or /etc/hosts. (implies --root)
   --use_home=x  Use the specified directory as the chroot user's home directory.
   --share_home  Use the executing user's home directory as the chroot user's home directory.
 
@@ -40,16 +40,19 @@ user_name, _, uid, gid, *_, login_home, login_shell = passwd_entry.split(':')
 
 init_user = os.getuid()
 mounts = {'/tmp':{}}
+bind_user_confs = False
 if not arguments.get('--no_ro'):
     readonlys = '/etc/shadow /etc/shadow- /etc/sudoers /etc/passwd /etc/group /etc/group- /etc/hosts /etc/fstab'.split()
-    bind_confs = True
+    bind_user_confs = True
 else:
     readonlys = []
+    user_name = 'root'
+    user_home = '/root'
 
 
 if arguments.get('--share_home'):
     mounts[user_home] = {'recursive': True}
-    bind_confs = False
+    bind_user_confs = False
 elif arguments.get('--use_home'):
     temp_home = arguments.get('--use_home')
     mounts[f'{temp_home}:{user_home}'] = {}
@@ -64,7 +67,7 @@ else:
         for name in dirs + files:
             os.chown(os.path.join(root, name), uid_, gid_)
 
-if bind_confs and (login_shell == '/bin/zsh'):
+if bind_user_confs and (login_shell == '/bin/zsh'):
     mounts[f'{user_home}/.zshrc'] = {'readonly':True, 'optional': True, 'create': True}
     mounts[f'{user_home}/.zfunctions'] = {'readonly':True, 'optional': True, 'create': True}
 
