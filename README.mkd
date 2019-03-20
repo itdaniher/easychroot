@@ -1,3 +1,22 @@
+### Usage
+
+```
+./mount_with_home.py:
+
+Usage:
+  ./mount_with_home.py CHROOT_PATH [options] [--share_home | --use_home=HOME_DIRECTORY_PATH] [ADDITIONAL_VOLUMES...]
+  ./mount_with_home.py (-h | --help)
+  ./mount_with_home.py --version
+
+Options:
+  -h --help     Show this screen.
+  --version     Show version.
+  --no_ro       Don't bind-mount readonly files necessary for consistent environment usage, like /etc/password or /etc/hosts.
+  --root        Don't drop privs to executing user, maintain root permissions in chroot.
+  --use_home=x  Use the specified directory as the chroot user's home directory.
+  --share_home  Use the executing user's home directory as the chroot user's home directory.
+```
+
 ### Build Alpine chroot
 
 ```bash
@@ -14,4 +33,3 @@ wget http://cdimage.ubuntu.com/ubuntu-base/releases/18.04/release/ubuntu-base-18
 mkdir ubuntu-1804-arm64 && cd ubuntu-1804-arm64
 sudo tar -xvf ../../ubuntu-base-18.04.1-base-arm64.tar.gz
 ```
-
