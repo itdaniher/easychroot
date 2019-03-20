@@ -1,6 +1,7 @@
 # Copyright (c) 2017 Oleg Bulkin
 # MIT License (https://opensource.org/licenses/MIT)
 
+
 def levenshtein(source, target):
     """Calculates the Levenshtein distance between two string arguments"""
 
@@ -19,6 +20,7 @@ def levenshtein_norm(source, target):
     # before returning it
     distance = _levenshtein_compute(source, target, False)
     return float(distance) / max(len(source), len(target))
+
 
 def _levenshtein_compute(source, target, rd_flag):
     """Computes the Levenshtein
@@ -73,8 +75,7 @@ def _levenshtein_compute(source, target, rd_flag):
             # previous characters in the source string. This can be thought of
             # as a double substitution and has a similar free case, where the
             # current and preceeding character in both strings is the same
-            if rd_flag and i > 1 and j > 1 and source[i - 1] == target[j - 2] \
-                    and source[i - 2] == target[j - 1]:
+            if rd_flag and i > 1 and j > 1 and source[i - 1] == target[j - 2] and source[i - 2] == target[j - 1]:
                 trans_dist = matrix[i - 2][j - 2] + sub_trans_cost
                 matrix[i][j] = min(matrix[i][j], trans_dist)
 
