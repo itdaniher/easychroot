@@ -30,7 +30,7 @@ def levenshtein_norm(source, target):
     return float(distance) / max(len(source), len(target))
 
 
-def levenshtein(source, target, rd_flag = False):
+def levenshtein(source, target, rd_flag=False):
     """Computes the Levenshtein
     (https://en.wikipedia.org/wiki/Levenshtein_distance)
     and restricted Damerau-Levenshtein
@@ -91,6 +91,7 @@ def levenshtein(source, target, rd_flag = False):
     # strings themselves, so this is the desired distance
     return matrix[len(source)][len(target)]
 
+
 class DocoptLanguageError(Exception):
 
     """Error in construction of usage-message by developer."""
@@ -102,7 +103,9 @@ class DocoptExit(SystemExit):
 
     usage = ""
 
-    def __init__(self, message=""):
+    def __init__(self, message="", collected=None, left=None):
+        self.collected = collected if collected is not None else []
+        self.left = left if left is not None else []
         SystemExit.__init__(self, (message + "\n" + self.usage).strip())
 
 
@@ -519,13 +522,21 @@ def parse_argv(tokens, options, options_first=False):
         argv ::= [ long | shorts | argument ]* [ '--' [ argument ]* ] ;
 
     """
+
+    def isanumber(x):
+        try:
+            float(x)
+            return True
+        except ValueError:
+            return False
+
     parsed = []
     while tokens.current() is not None:
         if tokens.current() == "--":
             return parsed + [Argument(None, v) for v in tokens]
         elif tokens.current().startswith("--"):
             parsed += parse_long(tokens, options)
-        elif tokens.current().startswith("-") and tokens.current() != "-":
+        elif tokens.current().startswith("-") and tokens.current() != "-" and not isanumber(tokens.current()):
             parsed += parse_shorts(tokens, options)
         elif options_first:
             return parsed + [Argument(None, v) for v in tokens]
@@ -641,6 +652,9 @@ def docopt(doc, argv=None, help=True, version=None, options_first=False):
         raise DocoptLanguageError('"usage:" (case-insensitive) not found.')
     if len(usage_sections) > 1:
         raise DocoptLanguageError('More than one "usage:" (case-insensitive).')
+    options_pattern = re.compile(r"\n\s*?options:", re.IGNORECASE)
+    if options_pattern.search(usage_sections[0]):
+        print("Warning: options (case-insensitive) was found in usage. " "Use a blank line between each section otherwise " "it behaves badly.")
     DocoptExit.usage = usage_sections[0]
 
     options = parse_defaults(doc)
@@ -662,4 +676,4 @@ def docopt(doc, argv=None, help=True, version=None, options_first=False):
     matched, left, collected = pattern.fix().match(argv)
     if matched and left == []:  # better error message if left?
         return Dict((a.name, a.value) for a in (pattern.flat() + collected))
-    raise DocoptExit()
+    raise DocoptExit(collected=collected, left=left)
