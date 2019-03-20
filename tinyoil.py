@@ -61,28 +61,27 @@ UMOUNT_NOFOLLOW = 8
 
 
 def touch(fname, mode=420, **kwargs):
-    '''touch(1) equivalent
+    """touch(1) equivalent
     :param fname: file path
     :type fname: str
     :param mode: file mode
     :type mode: octal
     See os.utime for other supported arguments.
-    '''
+    """
     flags = os.O_CREAT | os.O_APPEND
-    dir_fd = kwargs.get('dir_fd', None)
+    dir_fd = kwargs.get("dir_fd", None)
     os_open = functools.partial(os.open, dir_fd=dir_fd)
     with os.fdopen(os_open(fname, flags, mode)) as f:
-        os.utime(f.fileno() if os.utime in os.supports_fd else fname,
-                 dir_fd=None if os.supports_fd else dir_fd, **kwargs)
+        os.utime(f.fileno() if os.utime in os.supports_fd else fname, dir_fd=None if os.supports_fd else dir_fd, **kwargs)
 
 
 class SplitExec(object):
-    '''Context manager separating code execution across parent/child processes.
+    """Context manager separating code execution across parent/child processes.
 
     This is done by forking and doing some magic on the stack so the contents
     of the context are executed only on the forked child. Exceptions are
     pickled and passed back to the parent.
-    '''
+    """
 
     def __init__(self) -> None:
         self.__trace_lock = threading.Lock()
@@ -95,17 +94,17 @@ class SplitExec(object):
         self.locals = {}
 
     def _parent_handler(self, signum, frame):
-        '''Signal handler for the parent process.
+        """Signal handler for the parent process.
 
         By default this runs the parent cleanup and then resends the original
         signal to the parent process.
-        '''
+        """
         self._cleanup()
         signal.signal(signum, signal.SIG_DFL)
         os.kill(os.getpid(), signum)
 
     def _parent_setup(self) -> None:
-        'Initialization for parent process.'
+        "Initialization for parent process."
         try:
             signal.signal(signal.SIGINT, self._parent_handler)
             signal.signal(signal.SIGTERM, self._parent_handler)
@@ -113,13 +112,13 @@ class SplitExec(object):
             pass
 
     def _child_setup(self):
-        'Initialization for child process.'
+        "Initialization for child process."
 
     def _cleanup(self):
-        'Parent process clean up on termination of the child.'
+        "Parent process clean up on termination of the child."
 
     def _exception_cleanup(self):
-        'Parent process clean up after the child throws an exception.'
+        "Parent process clean up after the child throws an exception."
         self._cleanup()
 
     def _child_exit(self, exc):
@@ -192,32 +191,32 @@ class SplitExec(object):
 
     @staticmethod
     def __excepthook(_exc_type, exc_value, exc_traceback):
-        'Output the proper traceback information from the chroot context.'
-        if hasattr(exc_value, '__traceback_list__'):
+        "Output the proper traceback information from the chroot context."
+        if hasattr(exc_value, "__traceback_list__"):
             sys.stderr.write(exc_value.__traceback_list__)
         else:
             traceback.print_tb(exc_traceback)
 
     @staticmethod
     def __dummy_sys_trace(frame, event, arg):
-        'Dummy trace function used to enable tracing.'
+        "Dummy trace function used to enable tracing."
 
     class ParentException(Exception):
-        'Exception used to detect when the child terminates.'
+        "Exception used to detect when the child terminates."
 
     def __enable_tracing(self):
-        'Enable system-wide tracing via a dummy method.'
+        "Enable system-wide tracing via a dummy method."
         self.__orig_sys_trace = sys.gettrace()
         sys.settrace(self.__dummy_sys_trace)
 
     def __revert_tracing(self, frame=None):
-        'Revert to previous system trace setting.'
+        "Revert to previous system trace setting."
         sys.settrace(self.__orig_sys_trace)
         if frame is not None:
             frame.f_trace = self.__orig_sys_trace
 
     def __exit_context(self, frame, event, arg):
-        'Simple function to throw a ParentException.'
+        "Simple function to throw a ParentException."
         raise self.ParentException()
 
     def __inject_trace_func(self, frame, func):
@@ -236,11 +235,11 @@ class SplitExec(object):
         self.__injected_trace_funcs[frame].append(func)
 
     def __invoke_trace_funcs(self, frame, event, arg):
-        '''Invoke all trace funcs that have been injected.
+        """Invoke all trace funcs that have been injected.
 
         Once the injected functions have been executed all trace hooks are
         removed in order to minimize overhead.
-        '''
+        """
         try:
             for func in self.__injected_trace_funcs[frame]:
                 func(frame, event, arg)
@@ -252,16 +251,16 @@ class SplitExec(object):
                 frame.f_trace = self.__orig_trace_funcs.pop(frame)
 
     def __get_context_frame(self):
-        '''Get the frame object for the with-statement context.
+        """Get the frame object for the with-statement context.
 
         This is designed to work from within superclass method call. It finds
         the first frame where the local variable "self" doesn\'t exist.
-        '''
+        """
         try:
             return self.__frame
         except AttributeError:
             frame = inspect.stack(0)[2][0]
-            while frame.f_locals.get('self') is self:
+            while frame.f_locals.get("self") is self:
                 frame = frame.f_back
             self.__frame = frame
             return frame
@@ -293,14 +292,14 @@ def exit_as_status(status: int) -> None:
 
 
 def unshare(flags: int) -> None:
-    '''Binding to the Linux unshare system call. See unshare(2) for details.
+    """Binding to the Linux unshare system call. See unshare(2) for details.
 
     Args:
         flags: Namespaces to unshare; bitwise OR of CLONE_* flags.
 
     Raises:
         OSError: if unshare failed.
-    '''
+    """
     libc = ctypes.CDLL(None, use_errno=True)
     if libc.unshare(ctypes.c_int(flags)) != 0:
         e = ctypes.get_errno()
@@ -308,14 +307,14 @@ def unshare(flags: int) -> None:
 
 
 def _reap_children(pid: int) -> int:
-    '''Reap all children that get reparented to us until we see |pid| exit.
+    """Reap all children that get reparented to us until we see |pid| exit.
 
     Args:
         pid: The main child to watch for.
 
     Returns:
         The wait status of the |pid| child.
-    '''
+    """
     pid_status = 0
     while True:
         try:
@@ -331,7 +330,7 @@ def _reap_children(pid: int) -> int:
 
 
 def _safe_tcsetpgrp(fd: int, pgrp: int) -> None:
-    'Set |pgrp| as the controller of the tty |fd|.'
+    "Set |pgrp| as the controller of the tty |fd|."
     try:
         curr_pgrp = os.tcgetpgrp(fd)
     except OSError as e:
@@ -343,7 +342,7 @@ def _safe_tcsetpgrp(fd: int, pgrp: int) -> None:
 
 
 def create_pidns() -> Optional[int]:
-    '''Start a new pid namespace
+    """Start a new pid namespace
 
     This will launch all the right manager processes.  The child that returns
     will be isolated in a new pid namespace.
@@ -352,7 +351,7 @@ def create_pidns() -> Optional[int]:
 
     Returns:
         The last pid outside of the namespace.
-    '''
+    """
     first_pid = os.getpid()
     try:
         unshare(CLONE_NEWPID)
@@ -368,12 +367,11 @@ def create_pidns() -> Optional[int]:
         exit_as_status(_reap_children(pid))
     else:
         try:
-            mount(None, '/proc', 'proc', MS_PRIVATE | MS_REC)
+            mount(None, "/proc", "proc", MS_PRIVATE | MS_REC)
         except OSError as e:
             if e.errno != errno.EINVAL:
                 raise
-        mount('proc', '/proc', 'proc', MS_NOSUID |
-              MS_NODEV | MS_NOEXEC | MS_RELATIME)
+        mount("proc", "/proc", "proc", MS_NOSUID | MS_NODEV | MS_NOEXEC | MS_RELATIME)
         pid = os.fork()
         if pid:
             signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -385,10 +383,10 @@ def create_pidns() -> Optional[int]:
 
 
 def create_utsns(hostname: Optional[str] = None) -> None:
-    '''Start a new UTS namespace
+    """Start a new UTS namespace
 
     If functionality is not available, then it will return w/out doing anything.
-    '''
+    """
     try:
         unshare(CLONE_NEWUTS)
     except OSError as e:
@@ -415,7 +413,7 @@ def simple_unshare(_mount: bool = True, uts: bool = True, ipc: bool = True, pid:
     if _mount:
         unshare(CLONE_NEWNS)
         try:
-            mount(None, '/', None, MS_REC | MS_SLAVE)
+            mount(None, "/", None, MS_REC | MS_SLAVE)
         except OSError as e:
             if e.errno != errno.EINVAL:
                 raise
@@ -432,7 +430,7 @@ def simple_unshare(_mount: bool = True, uts: bool = True, ipc: bool = True, pid:
 
 
 def mount(source: Optional[str], target: str, fstype: Optional[str], flags: int, data: None = None) -> None:
-    'Call mount(2); see the man page for details.'
+    "Call mount(2); see the man page for details."
     libc = ctypes.CDLL(None, use_errno=True)
     source = source.encode() if isinstance(source, str) else source
     target = target.encode() if isinstance(target, str) else target
@@ -440,5 +438,3 @@ def mount(source: Optional[str], target: str, fstype: Optional[str], flags: int,
     if libc.mount(source, target, fstype, ctypes.c_ulong(flags), data) != 0:
         e = ctypes.get_errno()
         raise OSError(e, os.strerror(e))
-
-
