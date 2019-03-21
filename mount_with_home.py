@@ -3,7 +3,7 @@
 __doc__ = f"""{__file__}:
 
 Usage:
-  {__file__} CHROOT_PATH [--root | --no_ro | --share_home | --use_home=HOME_DIRECTORY_PATH] [ADDITIONAL_VOLUMES...]
+  {__file__} CHROOT_PATH [options] [ADDITIONAL_VOLUMES...]
   {__file__} --help
   {__file__} --version
 

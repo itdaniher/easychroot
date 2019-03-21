@@ -1,12 +1,12 @@
 ### Usage
 
 ```
-./mount_with_home.py:
+mount_with_home.py:
 
 Usage:
-  ./mount_with_home.py CHROOT_PATH [--root | --no_ro | --share_home | --use_home=HOME_DIRECTORY_PATH] [ADDITIONAL_VOLUMES...]
-  ./mount_with_home.py --help
-  ./mount_with_home.py --version
+  mount_with_home.py CHROOT_PATH [options] [ADDITIONAL_VOLUMES...]
+  mount_with_home.py --help
+  mount_with_home.py --version
 
 Options:
   --help        Show this screen.
@@ -33,3 +33,4 @@ wget http://cdimage.ubuntu.com/ubuntu-base/releases/18.04/release/ubuntu-base-18
 mkdir ubuntu-1804-arm64 && cd ubuntu-1804-arm64
 sudo tar -xvf ../../ubuntu-base-18.04.1-base-arm64.tar.gz
 ```
+NB: Corrected -h to --help via abbreviation (case change: None)
