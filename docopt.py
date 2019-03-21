@@ -4,8 +4,20 @@ Now: with levenshtein based spellcheck, flag extension (de-abbreviation), and ca
 (but only when unambiguous)
 
  * Licensed under terms of MIT license (see LICENSE-MIT)
- * Copyright (c) 2013 Vladimir Keleshev, vladimir@keleshev.com
- * Copyright (c) 2017 Oleg Bulkin
+
+Contributors (roughly in chronological order):
+
+ * Copyright (c) 2012 Andrew Kassen <atkassen@ucdavis.edu>
+ * Copyright (c) 2012 jeffrimko <jeffrimko@gmail.com>
+ * COpyright (c) 2012 Andrew Sutton <met48@met48.com>
+ * COpyright (c) 2012 Andrew Sutton <met48@met48.com>
+ * Copyright (c) 2012 Nima Johari <nimajohari@gmail.com>
+ * Copyright (c) 2012-2013 Vladimir Keleshev, vladimir@keleshev.com
+ * Copyright (c) 2014-2018 Matt Boersma <matt@sprout.org>
+ * Copyright (c) 2016 amir <ladsgroup@gmail.com>
+ * Copyright (c) 2015 Benjamin Bach <benjaoming@gmail.com>
+ * Copyright (c) 2017 Oleg Bulkin <o.bulkin@gmail.com>
+ * Copyright (c) 2018 Iain Barnett <iainspeed@gmail.com>
  * Copyright (c) 2019 itdaniher, itdaniher@gmail.com
 
 """
@@ -453,8 +465,8 @@ def parse_shorts(tokens, options):
                 else:
                     value = left
                     left = ""
-                if '=' in value:
-                    value = value.lstrip('=')
+                if "=" in value:
+                    value = value.lstrip("=")
             if tokens.error is DocoptExit:
                 o.value = value if value is not None else True
         parsed.append(o)
@@ -529,6 +541,7 @@ def parse_argv(tokens, options, options_first=False):
         argv ::= [ long | shorts | argument ]* [ '--' [ argument ]* ] ;
 
     """
+
     def isanumber(x):
         try:
             float(x)
@@ -555,15 +568,15 @@ def parse_defaults(doc, with_args=False):
     defaults = []
     for s in parse_section("options:", doc):
         options_literal, _, s = s.partition(":")
-        if ' ' in options_literal:
-            _, _, options_literal = options_literal.partition(' ')
-        assert options_literal.lower().strip() == 'options'
+        if " " in options_literal:
+            _, _, options_literal = options_literal.partition(" ")
+        assert options_literal.lower().strip() == "options"
         split = re.split("\n[ \t]*(-\S+?)", "\n" + s)[1:]
         split = [s1 + s2 for s1, s2 in zip(split[::2], split[1::2])]
         for s in split:
             if s.startswith("-"):
-                arg, _, description = s.partition('  ')
-                flag, _, var = arg.replace('=', ' ').partition(' ')
+                arg, _, description = s.partition("  ")
+                flag, _, var = arg.replace("=", " ").partition(" ")
                 option = Option.parse(s)
                 defaults.append(option)
     return defaults
@@ -667,8 +680,7 @@ def docopt(doc, argv=None, help=True, version=None, options_first=False):
         raise DocoptLanguageError('More than one "usage:" (case-insensitive).')
     options_pattern = re.compile(r"\n\s*?options:", re.IGNORECASE)
     if options_pattern.search(usage_sections[0]):
-        raise DocoptExit("Warning: options (case-insensitive) was found in usage." \
-            "Use a blank line between each section otherwise it behaves badly.")
+        raise DocoptExit("Warning: options (case-insensitive) was found in usage." "Use a blank line between each section otherwise it behaves badly.")
     DocoptExit.usage = usage_sections[0]
     options = parse_defaults(doc)
     pattern = parse_pattern(formal_usage(DocoptExit.usage), options)
@@ -679,7 +691,7 @@ def docopt(doc, argv=None, help=True, version=None, options_first=False):
     names = [n.long or n.short for n in options]
     duplicated = [n for n in names if names.count(n) > 1]
     if any([duplicated]):
-        raise DocoptLanguageError(f'duplicated token(s): {duplicated}')
+        raise DocoptLanguageError(f"duplicated token(s): {duplicated}")
 
     argv = parse_argv(Tokens(argv), list(options), options_first)
     extras(help, version, argv, doc)
