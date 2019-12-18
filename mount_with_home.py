@@ -20,7 +20,15 @@ from docopt import docopt
 
 import os
 import sys
-from pychroot import Chroot
+
+try:
+    from pychroot import base as pychroot
+    from pychroot import Chroot
+except ImportError:
+    sys.path.append(f"{os.getcwd()}/pychroot/src")
+    sys.path.append(f"{os.getcwd()}/snakeoil/src")
+    from pychroot import base as pychroot
+    from pychroot import Chroot
 
 arguments = docopt(__doc__, version="easychroot v0.1")
 user_name = os.environ.get("SUDO_USER") or os.environ["USER"]
@@ -84,6 +92,8 @@ env = dict(
     TERM="xterm-256color",
     HOME=user_home,
     PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin",
+    XDG_RUNTIME_DIR="/run/user/1000"
+    WAYLAND_DISPLAY="wayland-0"
 )
 
 with Chroot(chroot_path, mountpoints=mounts):
@@ -97,3 +107,4 @@ with Chroot(chroot_path, mountpoints=mounts):
     else:
         print("dropping to root shell: execve'ing %s" % user_shell)
         os.execve(user_shell, (user_shell,), os.environ)
+    quit()

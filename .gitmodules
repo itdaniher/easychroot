@@ -1,0 +1,6 @@
+[submodule "snakeoil"]
+	path = snakeoil
+	url = git://github.com/pkgcore/snakeoil.git
+[submodule "pychroot"]
+	path = pychroot
+	url = git://github.com/pkgcore/pychroot.git
