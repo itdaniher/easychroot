@@ -18,17 +18,15 @@ Options:
 """
 from docopt import docopt
 
+import pty
 import os
 import sys
+import time
 
-try:
-    from pychroot import base as pychroot
-    from pychroot import Chroot
-except ImportError:
-    sys.path.append(f"{os.getcwd()}/pychroot/src")
-    sys.path.append(f"{os.getcwd()}/snakeoil/src")
-    from pychroot import base as pychroot
-    from pychroot import Chroot
+sys.path.append(f"{os.getcwd()}/pychroot/src")
+sys.path.append(f"{os.getcwd()}/snakeoil/src")
+from pychroot import base as pychroot
+from pychroot import Chroot
 
 arguments = docopt(__doc__, version="easychroot v0.1")
 user_name = os.environ.get("SUDO_USER") or os.environ["USER"]
@@ -43,8 +41,9 @@ chroot_path = arguments.get("CHROOT_PATH")
 
 passwd_entry = [user_line for user_line in open("/etc/passwd", "r").read().split("\n") if user_name == user_line.split(":", maxsplit=1)[0]][0]
 
-user_name, _, uid, gid, *_, login_home, login_shell = passwd_entry.split(":")
-
+login_name, _, uid, gid, *_, login_home, login_shell = passwd_entry.split(":")
+if user_home != login_home and user_name == login_name:
+    user_home = login_home
 init_user = os.getuid()
 mounts = {"/tmp": {}}
 bind_user_confs = False
@@ -72,7 +71,10 @@ else:
     os.chown(temp_home, uid_, gid_)
     for root, dirs, files in os.walk(temp_home):
         for name in dirs + files:
-            os.chown(os.path.join(root, name), uid_, gid_)
+            try:
+                os.chown(os.path.join(root, name), uid_, gid_)
+            except FileNotFoundError:
+                pass
 
 if bind_user_confs and (login_shell == "/bin/zsh"):
     mounts[f"{user_home}/.zshrc"] = {"readonly": True, "optional": True, "create": True}
@@ -92,19 +94,18 @@ env = dict(
     TERM="xterm-256color",
     HOME=user_home,
     PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin",
-    XDG_RUNTIME_DIR="/run/user/1000"
+    XDG_RUNTIME_DIR="/run/user/1000",
     WAYLAND_DISPLAY="wayland-0"
 )
 
 with Chroot(chroot_path, mountpoints=mounts):
     env["CHROOT"] = "_" + os.path.basename(chroot_path.strip("/"))
-    os.environ = env
+    os.environ.update(env)
     os.chdir(user_home)
     user_shell = {True: user_shell, False: "/bin/sh"}[os.path.exists(user_shell)]
     if init_user != 1000 and os.path.exists(login_shell) and not arguments.get("--root"):
         print("have privilege and valid login_shell, no --root flag - su'ing to original user")
-        os.execve("/bin/su", ("/bin/su", user_name), os.environ)
+        pty.spawn(("/bin/su", user_name))
     else:
         print("dropping to root shell: execve'ing %s" % user_shell)
-        os.execve(user_shell, (user_shell,), os.environ)
-    quit()
+        pty.spawn((user_shell,))
