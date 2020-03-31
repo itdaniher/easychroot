@@ -34,3 +34,14 @@ mkdir ubuntu-1804-arm64 && cd ubuntu-1804-arm64
 sudo tar -xvf ../../ubuntu-base-18.04.1-base-arm64.tar.gz
 ```
 NB: Corrected -h to --help via abbreviation (case change: None)
+
+### Example invocation
+
+With pulse configured for audio in chroot.
+
+ ```bash
+ wget http://mirror.siena.edu/fedora/linux/releases/30/Container/aarch64/images/Fedora-Container-Base-30-1.2.aarch64.tar.xz
+ mkdir f30 && cd f30 && sudo tar -xvf Fedora-Container-Base-30-1.2.aarch64.tar.xz
+ sudo ~/projects/easychroot/mount_with_home.py f30 /run/user/1000/wayland-0 \
+    /var/run/user/1000/pulse:/run/user/1000/pulse pulse-client.conf:/etc/pulse/client.conf \
+    --share_home```
